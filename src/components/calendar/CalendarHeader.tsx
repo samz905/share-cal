@@ -168,7 +168,9 @@ export const CalendarHeader = ({
               variant={view === viewOption ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewChange(viewOption)}
-              className={view === viewOption ? "bg-white text-gray-900 shadow-sm" : ""}
+              className={view === viewOption 
+                ? "bg-white text-gray-900 shadow-sm hover:text-gray-900" 
+                : "hover:bg-gray-200"}
             >
               {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}
             </Button>
