@@ -19,7 +19,7 @@ A collaborative calendar web application built with React, TypeScript, Vite, sha
 Clone the repository and install dependencies:
 
 ```sh
-git clone <YOUR_GIT_URL>
+git clone https://github.com/samz905/link-n-plan-calendar
 cd link-n-plan-calendar
 npm install # or bun install
 ```
