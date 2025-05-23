@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ChevronLeft, ChevronRight, Plus, Share2, Copy, Home } from "lucide-react";
@@ -162,19 +161,25 @@ export const CalendarHeader = ({
         </div>
 
         <div className="flex bg-gray-100 rounded-lg p-1">
-          {(["month", "week"] as CalendarView[]).map((viewOption) => (
-            <Button
-              key={viewOption}
-              variant={view === viewOption ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onViewChange(viewOption)}
-              className={view === viewOption 
-                ? "bg-white text-gray-900 shadow-sm hover:text-gray-900" 
-                : "hover:bg-gray-200"}
-            >
-              {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}
-            </Button>
-          ))}
+          {(["month", "week"] as CalendarView[]).map((viewOption) => {
+            const isActive = view === viewOption;
+            return (
+              <Button
+                key={viewOption}
+                variant={isActive ? "default" : "ghost"}
+                size="sm"
+                onClick={() => onViewChange(viewOption)}
+                className={
+                  isActive
+                    ? "bg-white text-gray-900 shadow-sm cursor-default hover:bg-white hover:text-gray-900"
+                    : "hover:bg-gray-200 hover:text-gray-900"
+                }
+                disabled={isActive}
+              >
+                {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}
+              </Button>
+            );
+          })}
         </div>
       </div>
     </div>
