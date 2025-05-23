@@ -1,73 +1,66 @@
-# Welcome to your Lovable project
+# Link-n-Plan Calendar
 
-## Project info
+A collaborative calendar web application built with React, TypeScript, Vite, shadcn-ui, Tailwind CSS, and Supabase.
 
-**URL**: https://lovable.dev/projects/7b225a5d-09d8-45a1-a0e0-8fb170ba8f5e
+## Features
+- Month and week calendar views
+- Event creation and management
+- Shared calendar links
+- Responsive, modern UI
+- Supabase integration for backend data
 
-## How can I edit this code?
+## Getting Started
 
-There are several ways of editing your application.
+### Prerequisites
+- Node.js (18+ recommended)
+- npm or bun
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/7b225a5d-09d8-45a1-a0e0-8fb170ba8f5e) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation
+Clone the repository and install dependencies:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+cd link-n-plan-calendar
+npm install # or bun install
 ```
 
-**Edit a file directly in GitHub**
+### Development
+Start the development server:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+npm run dev # or bun run dev
+```
 
-**Use GitHub Codespaces**
+The app will be available at `http://localhost:5173` by default.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Building for Production
+To build the app:
 
-## What technologies are used for this project?
+```sh
+npm run build # or bun run build
+```
 
-This project is built with:
+### Preview Production Build
+To preview the production build locally:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```sh
+npm run preview # or bun run preview
+```
 
-## How can I deploy this project?
+## Technologies Used
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Supabase](https://supabase.com/)
 
-Simply open [Lovable](https://lovable.dev/projects/7b225a5d-09d8-45a1-a0e0-8fb170ba8f5e) and click on Share -> Publish.
+## Testing
+No test script is currently set up. To add tests, consider using [Vitest](https://vitest.dev/) or [Jest](https://jestjs.io/). Add a `test` script in `package.json` after setup.
 
-## Can I connect a custom domain to my Lovable project?
+## Deployment
+You can deploy this app to any static hosting provider (Vercel, Netlify, etc.) after building. For Supabase integration, ensure your environment variables are set up correctly in production.
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Feel free to contribute or open issues for improvements!
