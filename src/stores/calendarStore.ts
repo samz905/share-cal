@@ -1,79 +1,129 @@
 
 import { create } from 'zustand';
 import { Event, CalendarState } from '@/types/calendar';
+import { 
+  fetchEvents, 
+  addEvent as addEventToDb, 
+  updateEvent as updateEventInDb,
+  deleteEvent as deleteEventFromDb,
+  createCalendar as createCalendarInDb,
+  checkCalendarExists
+} from '@/integrations/supabase/calendarApi';
+import { toast } from '@/hooks/use-toast';
 
 interface CalendarStore extends CalendarState {
-  loadCalendar: (calendarId: string) => void;
-  addEvent: (event: Event) => void;
-  updateEvent: (eventId: string, updates: Partial<Event>) => void;
-  deleteEvent: (eventId: string) => void;
+  loadCalendar: (calendarId: string) => Promise<boolean>;
+  createCalendarIfNeeded: (calendarId: string) => Promise<boolean>;
+  addEvent: (event: Event) => Promise<void>;
+  updateEvent: (eventId: string, updates: Partial<Event>) => Promise<void>;
+  deleteEvent: (eventId: string) => Promise<void>;
   getEventsForDate: (date: Date) => Event[];
+  isLoading: boolean;
 }
 
 export const useCalendarStore = create<CalendarStore>((set, get) => ({
   events: [],
   currentCalendarId: null,
+  isLoading: false,
 
-  loadCalendar: (calendarId: string) => {
-    // Load calendar data from localStorage or API
-    const storageKey = `calendar-${calendarId}`;
-    const savedData = localStorage.getItem(storageKey);
+  loadCalendar: async (calendarId: string) => {
+    set({ isLoading: true });
     
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      const events = parsedData.events?.map((event: any) => ({
-        ...event,
-        startDate: new Date(event.startDate),
-        endDate: new Date(event.endDate)
-      })) || [];
+    try {
+      // Check if calendar exists
+      const exists = await checkCalendarExists(calendarId);
+      if (!exists) {
+        await createCalendarInDb(calendarId);
+      }
       
-      set({ events, currentCalendarId: calendarId });
-    } else {
-      set({ events: [], currentCalendarId: calendarId });
+      // Fetch events
+      const events = await fetchEvents(calendarId);
+      
+      set({ 
+        events, 
+        currentCalendarId: calendarId,
+        isLoading: false 
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error loading calendar:", error);
+      set({ isLoading: false });
+      return false;
     }
   },
 
-  addEvent: (event: Event) => {
+  createCalendarIfNeeded: async (calendarId: string) => {
+    const exists = await checkCalendarExists(calendarId);
+    if (!exists) {
+      return await createCalendarInDb(calendarId);
+    }
+    return true;
+  },
+
+  addEvent: async (event: Event) => {
     const state = get();
-    const newEvents = [...state.events, event];
+    const calendarId = state.currentCalendarId;
     
-    set({ events: newEvents });
+    if (!calendarId) return;
     
-    // Save to localStorage
-    if (state.currentCalendarId) {
-      localStorage.setItem(`calendar-${state.currentCalendarId}`, JSON.stringify({
-        events: newEvents
-      }));
+    try {
+      const eventId = await addEventToDb(calendarId, event);
+      
+      if (eventId) {
+        const newEvent = { ...event, id: eventId };
+        set({ events: [...state.events, newEvent] });
+      }
+    } catch (error) {
+      console.error("Error adding event:", error);
+      toast({
+        title: "Failed to add event",
+        description: "There was an error adding your event. Please try again.",
+        variant: "destructive"
+      });
     }
   },
 
-  updateEvent: (eventId: string, updates: Partial<Event>) => {
+  updateEvent: async (eventId: string, updates: Partial<Event>) => {
     const state = get();
-    const newEvents = state.events.map(event => 
-      event.id === eventId ? { ...event, ...updates } : event
-    );
     
-    set({ events: newEvents });
-    
-    // Save to localStorage
-    if (state.currentCalendarId) {
-      localStorage.setItem(`calendar-${state.currentCalendarId}`, JSON.stringify({
-        events: newEvents
-      }));
+    try {
+      const success = await updateEventInDb(eventId, updates);
+      
+      if (success) {
+        const newEvents = state.events.map(event => 
+          event.id === eventId ? { ...event, ...updates } : event
+        );
+        
+        set({ events: newEvents });
+      }
+    } catch (error) {
+      console.error("Error updating event:", error);
+      toast({
+        title: "Failed to update event",
+        description: "There was an error updating your event. Please try again.",
+        variant: "destructive"
+      });
     }
   },
 
-  deleteEvent: (eventId: string) => {
+  deleteEvent: async (eventId: string) => {
     const state = get();
-    const newEvents = state.events.filter(event => event.id !== eventId);
     
-    set({ events: newEvents });
-    
-    // Save to localStorage
-    if (state.currentCalendarId) {
-      localStorage.setItem(`calendar-${state.currentCalendarId}`, JSON.stringify({
-        events: newEvents
-      }));
+    try {
+      const success = await deleteEventFromDb(eventId);
+      
+      if (success) {
+        const newEvents = state.events.filter(event => event.id !== eventId);
+        set({ events: newEvents });
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast({
+        title: "Failed to delete event",
+        description: "There was an error deleting your event. Please try again.",
+        variant: "destructive"
+      });
     }
   },
 
@@ -83,5 +133,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       const eventDate = new Date(event.startDate);
       return eventDate.toDateString() === date.toDateString();
     });
-  }
+  },
+  
+  isLoading: false
 }));

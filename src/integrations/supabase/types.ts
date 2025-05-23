@@ -9,13 +9,83 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      calendars: {
+        Row: {
+          calendar_id: string
+          created_at: string
+          id: string
+          last_active_at: string
+        }
+        Insert: {
+          calendar_id: string
+          created_at?: string
+          id?: string
+          last_active_at?: string
+        }
+        Update: {
+          calendar_id?: string
+          created_at?: string
+          id?: string
+          last_active_at?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          calendar_id: string
+          category: string
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          reminder: string | null
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          calendar_id: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          reminder?: string | null
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          calendar_id?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          reminder?: string | null
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "calendars"
+            referencedColumns: ["calendar_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_inactive_calendars: {
+        Args: { days_inactive: number }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

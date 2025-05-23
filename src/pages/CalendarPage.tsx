@@ -1,12 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarGrid } from "@/components/calendar/CalendarGrid";
 import { EventSidebar } from "@/components/calendar/EventSidebar";
 import { EventDialog } from "@/components/calendar/EventDialog";
 import { useCalendarStore } from "@/stores/calendarStore";
 import { Event, CalendarView } from "@/types/calendar";
+import { Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const CalendarPage = () => {
   const { calendarId } = useParams<{ calendarId: string }>();
@@ -15,14 +17,34 @@ const CalendarPage = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const navigate = useNavigate();
   
-  const { events, loadCalendar, addEvent, updateEvent, deleteEvent } = useCalendarStore();
+  const {
+    events,
+    loadCalendar,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    isLoading
+  } = useCalendarStore();
 
   useEffect(() => {
-    if (calendarId) {
-      loadCalendar(calendarId);
-    }
-  }, [calendarId, loadCalendar]);
+    const initCalendar = async () => {
+      if (calendarId) {
+        const success = await loadCalendar(calendarId);
+        if (!success) {
+          toast({
+            title: "Calendar not found",
+            description: "The calendar you're looking for doesn't exist or couldn't be loaded.",
+            variant: "destructive"
+          });
+          navigate("/");
+        }
+      }
+    };
+    
+    initCalendar();
+  }, [calendarId, loadCalendar, navigate]);
 
   const handleCreateEvent = (date?: Date) => {
     setSelectedEvent(null);
@@ -36,12 +58,12 @@ const CalendarPage = () => {
     setIsEventDialogOpen(true);
   };
 
-  const handleEventSave = (eventData: Partial<Event>) => {
+  const handleEventSave = async (eventData: Partial<Event>) => {
     if (selectedEvent) {
-      updateEvent(selectedEvent.id, eventData);
+      await updateEvent(selectedEvent.id, eventData);
     } else {
-      addEvent({
-        id: Date.now().toString(),
+      await addEvent({
+        id: "",  // This will be replaced by the server-generated ID
         title: eventData.title || "",
         description: eventData.description || "",
         startDate: eventData.startDate || selectedDate || new Date(),
@@ -55,11 +77,19 @@ const CalendarPage = () => {
     setSelectedDate(null);
   };
 
-  const handleEventDelete = (eventId: string) => {
-    deleteEvent(eventId);
+  const handleEventDelete = async (eventId: string) => {
+    await deleteEvent(eventId);
     setIsEventDialogOpen(false);
     setSelectedEvent(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
