@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Event, CalendarState } from '@/types/calendar';
 import { 
@@ -133,7 +132,5 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       const eventDate = new Date(event.startDate);
       return eventDate.toDateString() === date.toDateString();
     });
-  },
-  
-  isLoading: false
+  }
 }));
