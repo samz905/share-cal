@@ -55,9 +55,6 @@ npm run preview # or bun run preview
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Supabase](https://supabase.com/)
 
-## Testing
-No test script is currently set up. To add tests, consider using [Vitest](https://vitest.dev/) or [Jest](https://jestjs.io/). Add a `test` script in `package.json` after setup.
-
 ## Deployment
 You can deploy this app to any static hosting provider (Vercel, Netlify, etc.) after building. For Supabase integration, ensure your environment variables are set up correctly in production.
 
