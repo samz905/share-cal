@@ -1,9 +1,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Share2, Copy } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Share2, Copy, Home } from "lucide-react";
 import { CalendarView } from "@/types/calendar";
 import { toast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 interface CalendarHeaderProps {
   calendarId: string;
@@ -91,6 +92,29 @@ export const CalendarHeader = ({
           <Button
             variant="outline"
             size="sm"
+            asChild
+            className="hidden md:flex"
+          >
+            <Link to="/">
+              <Home className="w-4 h-4 mr-2" />
+              New Calendar
+            </Link>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="md:hidden"
+          >
+            <Link to="/">
+              <Home className="w-4 h-4" />
+            </Link>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={copyShareLink}
             className="hidden sm:flex"
           >
@@ -144,7 +168,7 @@ export const CalendarHeader = ({
               variant={view === viewOption ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewChange(viewOption)}
-              className={view === viewOption ? "bg-white shadow-sm" : ""}
+              className={view === viewOption ? "bg-white text-gray-900 shadow-sm" : ""}
             >
               {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}
             </Button>
