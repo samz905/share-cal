@@ -9,6 +9,7 @@ import {
   checkCalendarExists
 } from '@/integrations/supabase/calendarApi';
 import { toast } from '@/hooks/use-toast';
+import { isEventOnDay } from '@/utils/eventUtils';
 
 interface CalendarStore extends CalendarState {
   loadCalendar: (calendarId: string) => Promise<boolean>;
@@ -29,14 +30,24 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
     set({ isLoading: true });
     
     try {
+      console.log("Loading calendar:", calendarId);
+      
       // Check if calendar exists
       const exists = await checkCalendarExists(calendarId);
+      console.log("Calendar exists:", exists);
+      
       if (!exists) {
-        await createCalendarInDb(calendarId);
+        console.log("Creating new calendar:", calendarId);
+        const created = await createCalendarInDb(calendarId);
+        if (!created) {
+          throw new Error("Failed to create calendar");
+        }
       }
       
       // Fetch events
+      console.log("Fetching events for calendar:", calendarId);
       const events = await fetchEvents(calendarId);
+      console.log("Loaded events:", events.length);
       
       set({ 
         events, 
@@ -48,6 +59,13 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
     } catch (error) {
       console.error("Error loading calendar:", error);
       set({ isLoading: false });
+      
+      toast({
+        title: "Failed to load calendar",
+        description: "There was an error connecting to your calendar. Please check your connection and try again.",
+        variant: "destructive"
+      });
+      
       return false;
     }
   },
@@ -64,20 +82,41 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
     const state = get();
     const calendarId = state.currentCalendarId;
     
-    if (!calendarId) return;
+    if (!calendarId) {
+      console.error("No calendar ID available");
+      toast({
+        title: "Calendar not loaded",
+        description: "Please refresh the page and try again.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
+      console.log("Adding event to calendar:", calendarId, event);
       const eventId = await addEventToDb(calendarId, event);
       
       if (eventId) {
         const newEvent = { ...event, id: eventId };
         set({ events: [...state.events, newEvent] });
+        
+        toast({
+          title: "Event created",
+          description: `"${event.title}" has been added to your calendar.`,
+        });
+      } else {
+        console.error("Failed to create event - no eventId returned");
+        toast({
+          title: "Failed to add event",
+          description: "The event could not be created. Please check your connection and try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Error adding event:", error);
       toast({
         title: "Failed to add event",
-        description: "There was an error adding your event. Please try again.",
+        description: "There was an error adding your event. Please check your internet connection and try again.",
         variant: "destructive"
       });
     }
@@ -128,9 +167,6 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
 
   getEventsForDate: (date: Date) => {
     const state = get();
-    return state.events.filter(event => {
-      const eventDate = new Date(event.startDate);
-      return eventDate.toDateString() === date.toDateString();
-    });
+    return state.events.filter(event => isEventOnDay(event, date));
   }
 }));

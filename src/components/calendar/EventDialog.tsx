@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Event, EventCategory, ReminderTime } from "@/types/calendar";
 import {
@@ -116,7 +115,7 @@ export const EventDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Calendar className="w-5 h-5" />
@@ -124,7 +123,7 @@ export const EventDialog = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6 px-1">
           <div>
             <Label htmlFor="title">Event Title</Label>
             <Input
@@ -133,6 +132,7 @@ export const EventDialog = ({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter event title"
               maxLength={100}
+              className="mt-2"
             />
           </div>
 
@@ -145,51 +145,56 @@ export const EventDialog = ({
               placeholder="Add event description"
               rows={3}
               maxLength={1000}
+              className="mt-2"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
               <Label>Start Date & Time</Label>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  className="flex-1"
                 />
                 <Input
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
+                  className="flex-1"
                 />
               </div>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label>End Date & Time</Label>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  className="flex-1"
                 />
                 <Input
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
+                  className="flex-1"
                 />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
               <Label className="flex items-center space-x-2">
                 <Tag className="w-4 h-4" />
                 <span>Category</span>
               </Label>
               <Select value={category} onValueChange={(value: EventCategory) => setCategory(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -205,13 +210,13 @@ export const EventDialog = ({
               </Select>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label className="flex items-center space-x-2">
                 <Bell className="w-4 h-4" />
                 <span>Reminder</span>
               </Label>
               <Select value={reminder} onValueChange={(value: ReminderTime) => setReminder(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -226,8 +231,8 @@ export const EventDialog = ({
           </div>
         </div>
 
-        <DialogFooter className="flex justify-between">
-          <div>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6">
+          <div className="flex justify-center sm:justify-start">
             {event && onDelete && (
               <Button
                 variant="destructive"
@@ -240,14 +245,14 @@ export const EventDialog = ({
             )}
           </div>
           
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button
               onClick={handleSave}
               disabled={!title.trim()}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
             >
               {event ? "Update" : "Create"} Event
             </Button>

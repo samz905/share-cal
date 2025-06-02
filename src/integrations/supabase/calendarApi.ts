@@ -1,4 +1,3 @@
-
 import { supabase } from "./client";
 import { Event } from "@/types/calendar";
 
@@ -62,6 +61,8 @@ export const fetchEvents = async (calendarId: string): Promise<Event[]> => {
 // Add an event
 export const addEvent = async (calendarId: string, event: Event): Promise<string | null> => {
   try {
+    console.log("Attempting to add event to Supabase:", { calendarId, event });
+    
     const { data, error } = await supabase
       .from("events")
       .insert({
@@ -76,7 +77,12 @@ export const addEvent = async (calendarId: string, event: Event): Promise<string
       .select("id")
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase error adding event:", error);
+      throw error;
+    }
+    
+    console.log("Event added successfully, ID:", data.id);
     return data.id;
   } catch (error) {
     console.error("Error adding event:", error);

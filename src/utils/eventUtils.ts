@@ -1,5 +1,4 @@
-
-import { EventCategory } from "@/types/calendar";
+import { EventCategory, Event } from "@/types/calendar";
 import { 
   Briefcase, 
   User, 
@@ -33,4 +32,23 @@ export const getCategoryIcon = (category: EventCategory) => {
   };
   
   return icons[category];
+};
+
+/**
+ * Check if an event occurs on a specific day (supports multi-day events)
+ * @param event The event to check
+ * @param day The day to check against
+ * @returns true if the event occurs on the given day
+ */
+export const isEventOnDay = (event: Event, day: Date): boolean => {
+  const eventStart = new Date(event.startDate);
+  const eventEnd = new Date(event.endDate);
+  
+  // Reset time to compare only dates
+  const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+  const eventStartDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+  const eventEndDate = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
+  
+  // Check if the day falls within the event's date range (inclusive)
+  return dayStart >= eventStartDate && dayStart <= eventEndDate;
 };
