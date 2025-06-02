@@ -301,8 +301,8 @@ export const CalendarGrid = ({
                 }`}
                 onClick={() => onDateClick(day)}
               >
-                <div className={`text-sm font-medium mb-1 ${
-                  isToday ? "bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center" : ""
+                <div className={`text-sm font-medium mb-1 h-6 flex items-center ${
+                  isToday ? "bg-blue-500 text-white w-6 rounded-full justify-center" : ""
                 }`}>
                   {day.getDate()}
                 </div>
@@ -453,8 +453,8 @@ export const CalendarGrid = ({
                 className="min-h-[400px] p-2 border-r last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => onDateClick(day)}
               >
-                <div className={`text-sm font-medium mb-1 ${
-                  isToday ? "bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center" : ""
+                <div className={`text-sm font-medium mb-1 h-6 flex items-center ${
+                  isToday ? "bg-blue-500 text-white w-6 rounded-full justify-center" : ""
                 }`}>
                   {day.getDate()}
                 </div>
