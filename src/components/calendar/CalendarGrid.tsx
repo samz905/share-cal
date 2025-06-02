@@ -278,7 +278,7 @@ export const CalendarGrid = ({
             const isToday = day.toDateString() === new Date().toDateString();
             const dayKey = day.toDateString();
             const dayLayout = layout[dayKey] || [];
-            const totalEvents = events.filter(event => isEventOnDate(event, day)).length;
+            const totalEventsOnDay = events.filter(event => isEventOnDate(event, day)).length;
 
             return (
               <div
@@ -345,9 +345,9 @@ export const CalendarGrid = ({
                     );
                   })}
                   
-                  {totalEvents > 3 && (
+                  {totalEventsOnDay > 3 && (
                     <div className="text-xs text-gray-500 h-5 flex items-center justify-center">
-                      +{totalEvents - 3} more
+                      +{totalEventsOnDay - 3} more
                     </div>
                   )}
                 </div>
