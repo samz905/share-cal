@@ -49,6 +49,89 @@ export const CalendarGrid = ({
     return { isStart, isEnd, isMiddle };
   };
 
+  // Helper function to determine if an event spans multiple days
+  const isMultiDayEvent = (event: Event) => {
+    const start = new Date(event.startDate);
+    const end = new Date(event.endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    return start.getTime() !== end.getTime();
+  };
+
+  // Function to create layout for single-day events only
+  const createSingleDayEventLayout = (days: Date[]) => {
+    const layout: { [dayKey: string]: { event: Event; row: number }[] } = {};
+    
+    days.forEach(day => {
+      const dayKey = day.toDateString();
+      layout[dayKey] = [];
+      
+      const singleDayEvents = events.filter(event => 
+        isEventOnDate(event, day) && !isMultiDayEvent(event)
+      );
+      
+      singleDayEvents.forEach((event, index) => {
+        if (index < 3) {
+          layout[dayKey].push({ event, row: index });
+        }
+      });
+    });
+    
+    return layout;
+  };
+
+  // Function to create layout for multi-day events
+  const createMultiDayEventLayout = (days: Date[]) => {
+    const multiDayEvents = events.filter(isMultiDayEvent);
+    const eventRows: { event: Event; row: number; startCol: number; span: number }[] = [];
+    
+    multiDayEvents.forEach(event => {
+      // Find start and end positions in the grid
+      const startIndex = days.findIndex(day => {
+        const dayStart = new Date(day);
+        const eventStart = new Date(event.startDate);
+        dayStart.setHours(0, 0, 0, 0);
+        eventStart.setHours(0, 0, 0, 0);
+        return dayStart.getTime() === eventStart.getTime();
+      });
+      
+      const endIndex = days.findIndex(day => {
+        const dayEnd = new Date(day);
+        const eventEnd = new Date(event.endDate);
+        dayEnd.setHours(0, 0, 0, 0);
+        eventEnd.setHours(0, 0, 0, 0);
+        return dayEnd.getTime() === eventEnd.getTime();
+      });
+      
+      if (startIndex !== -1 && endIndex !== -1) {
+        const span = endIndex - startIndex + 1;
+        
+        // Find available row
+        let row = 0;
+        while (row < 3) {
+          const hasConflict = eventRows.some(existing => 
+            existing.row === row &&
+            !(startIndex >= existing.startCol + existing.span || startIndex + span <= existing.startCol)
+          );
+          
+          if (!hasConflict) break;
+          row++;
+        }
+        
+        if (row < 3) {
+          eventRows.push({
+            event,
+            row,
+            startCol: startIndex,
+            span
+          });
+        }
+      }
+    });
+    
+    return eventRows;
+  };
+
   // Function to create a consistent layout for events across multiple days
   const createEventLayout = (days: Date[]) => {
     const layout: { [dayKey: string]: { event: Event; position: ReturnType<typeof getEventPosition>; row: number }[] } = {};
@@ -137,7 +220,45 @@ export const CalendarGrid = ({
     }
 
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const layout = createEventLayout(days);
+    
+    // Create layout that assigns consistent rows to multi-day events
+    const layout: { [dayKey: string]: { event: Event; position: ReturnType<typeof getEventPosition>; row: number }[] } = {};
+    const eventRowMap = new Map<string, number>();
+    
+    // First pass: assign row numbers to events to maintain continuity
+    events.forEach(event => {
+      const eventDays = days.filter(day => isEventOnDate(event, day));
+      if (eventDays.length > 0 && !eventRowMap.has(event.id)) {
+        // Find the first available row across all days this event spans
+        let row = 0;
+        let rowAvailable = false;
+        
+        while (!rowAvailable && row < 3) {
+          rowAvailable = eventDays.every(day => {
+            const dayKey = day.toDateString();
+            if (!layout[dayKey]) layout[dayKey] = [];
+            return !layout[dayKey].some(item => item.row === row);
+          });
+          
+          if (!rowAvailable) row++;
+        }
+        
+        if (row < 3) {
+          eventRowMap.set(event.id, row);
+          
+          // Reserve this row for all days this event spans
+          eventDays.forEach(day => {
+            const dayKey = day.toDateString();
+            if (!layout[dayKey]) layout[dayKey] = [];
+            layout[dayKey].push({
+              event,
+              position: getEventPosition(event, day),
+              row
+            });
+          });
+        }
+      }
+    });
 
     return (
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -162,7 +283,7 @@ export const CalendarGrid = ({
             return (
               <div
                 key={index}
-                className={`min-h-[120px] p-2 border-b border-r last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors relative overflow-visible ${
+                className={`min-h-[120px] p-2 border-b border-r last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors ${
                   !isCurrentMonth ? "bg-gray-50/50 text-gray-400" : ""
                 }`}
                 onClick={() => onDateClick(day)}
@@ -173,7 +294,7 @@ export const CalendarGrid = ({
                   {day.getDate()}
                 </div>
                 
-                <div className="space-y-1 relative">
+                <div className="space-y-1">
                   {/* Render events in their assigned rows */}
                   {[0, 1, 2].map(rowIndex => {
                     const eventInRow = dayLayout.find(item => item.row === rowIndex);
@@ -185,27 +306,26 @@ export const CalendarGrid = ({
                       return (
                         <div
                           key={`${event.id}-${day.toDateString()}-${rowIndex}`}
-                          className={`relative z-10 ${
-                            position.isStart ? "" : 
-                            position.isEnd ? "" :
-                            position.isMiddle ? "" : ""
-                          }`}
+                          className="relative"
                           style={{
                             marginLeft: position.isStart ? '0' : '-8px',
                             marginRight: position.isEnd ? '0' : '-8px',
-                            width: position.isStart && position.isEnd ? 'auto' : 
-                                   position.isStart ? 'calc(100% + 8px)' :
-                                   position.isEnd ? 'calc(100% + 8px)' :
-                                   'calc(100% + 16px)'
+                            zIndex: 10
                           }}
                         >
                           <Badge
                             variant="secondary"
                             className={`text-xs cursor-pointer block truncate h-5 flex items-center ${baseColor} ${
+                              position.isStart && position.isEnd ? "rounded-md" : 
                               position.isStart ? "rounded-l-md rounded-r-none" : 
                               position.isEnd ? "rounded-r-md rounded-l-none" :
-                              position.isMiddle ? "rounded-none" : ""
+                              position.isMiddle ? "rounded-none" : "rounded-md"
                             }`}
+                            style={{
+                              borderColor: getCategoryColor(event.category, true),
+                              borderLeftStyle: position.isStart || (!position.isMiddle && !position.isEnd) ? 'solid' : 'none',
+                              borderRightStyle: position.isEnd || (!position.isMiddle && !position.isStart) ? 'solid' : 'none',
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               onEventClick(event);
@@ -219,7 +339,7 @@ export const CalendarGrid = ({
                       );
                     }
                     
-                    // Empty row placeholder
+                    // Empty row placeholder to maintain spacing
                     return (
                       <div key={`empty-${rowIndex}`} className="h-5"></div>
                     );
@@ -285,10 +405,19 @@ export const CalendarGrid = ({
                       <Card
                         key={`${event.id}-${day.toDateString()}`}
                         className={`p-2 cursor-pointer hover:shadow-md transition-shadow min-h-[3rem] flex flex-col justify-center ${baseColor} ${
+                          position.isStart && position.isEnd ? "rounded-lg" : 
                           position.isStart ? "rounded-l-lg rounded-r-none" : 
                           position.isEnd ? "rounded-r-lg rounded-l-none" :
-                          position.isMiddle ? "rounded-none" : ""
+                          position.isMiddle ? "rounded-none" : "rounded-lg"
                         }`}
+                        style={{
+                          borderLeft: position.isStart || (!position.isMiddle && !position.isEnd) ? 
+                            '1px solid ' + getCategoryColor(event.category, true) : 'none',
+                          borderRight: position.isEnd || (!position.isMiddle && !position.isStart) ? 
+                            '1px solid ' + getCategoryColor(event.category, true) : 'none',
+                          borderTop: '1px solid ' + getCategoryColor(event.category, true),
+                          borderBottom: '1px solid ' + getCategoryColor(event.category, true)
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
                           onEventClick(event);
