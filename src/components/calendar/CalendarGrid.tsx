@@ -45,6 +45,10 @@ export const CalendarGrid = ({
       const eventStartDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
       const eventEndDate = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
 
+      // Only process multi-day events (skip single-day events)
+      const isSingleDay = eventStartDate.getTime() === eventEndDate.getTime();
+      if (isSingleDay) return;
+
       // Find which days in this week the event spans
       let startCol = -1;
       let endCol = -1;
@@ -118,18 +122,18 @@ export const CalendarGrid = ({
                   const isCurrentMonth = day.getMonth() === currentDate.getMonth();
                   const isToday = day.toDateString() === new Date().toDateString();
                   
-                  // Get single-day events for this day (excluding multi-day events that will be rendered as spans)
+                  // Get single-day events for this day
                   const singleDayEvents = events.filter(event => {
                     const eventStart = new Date(event.startDate);
                     const eventEnd = new Date(event.endDate);
                     const eventStartDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
                     const eventEndDate = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
                     
-                    // Only show if it's a single day event or if this is the start day of a multi-day event
+                    // Only show single-day events that occur on this specific day
                     const isSingleDay = eventStartDate.getTime() === eventEndDate.getTime();
                     const dayDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
                     
-                    return isSingleDay && isEventOnDay(event, day);
+                    return isSingleDay && dayDate.getTime() === eventStartDate.getTime();
                   });
 
                   return (
@@ -234,8 +238,11 @@ export const CalendarGrid = ({
                 const eventStartDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
                 const eventEndDate = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
                 
+                // Only show single-day events that occur on this specific day
                 const isSingleDay = eventStartDate.getTime() === eventEndDate.getTime();
-                return isSingleDay && isEventOnDay(event, day);
+                const dayDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+                
+                return isSingleDay && dayDate.getTime() === eventStartDate.getTime();
               });
 
               return (
