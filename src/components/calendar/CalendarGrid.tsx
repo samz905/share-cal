@@ -372,12 +372,54 @@ export const CalendarGrid = ({
 
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+    // Create layout that assigns consistent rows to events (same logic as month view)
+    const layout: { [dayKey: string]: { event: Event; position: ReturnType<typeof getEventPosition>; row: number }[] } = {};
+    const eventRowMap = new Map<string, number>();
+    
+    // First pass: assign row numbers to events to maintain continuity
+    events.forEach(event => {
+      const eventDays = days.filter(day => isEventOnDate(event, day));
+      if (eventDays.length > 0 && !eventRowMap.has(event.id)) {
+        // Find the first available row across all days this event spans
+        let row = 0;
+        let rowAvailable = false;
+        
+        while (!rowAvailable && row < 10) { // Allow more rows in week view
+          rowAvailable = eventDays.every(day => {
+            const dayKey = day.toDateString();
+            if (!layout[dayKey]) layout[dayKey] = [];
+            return !layout[dayKey].some(item => item.row === row);
+          });
+          
+          if (!rowAvailable) row++;
+        }
+        
+        if (row < 10) {
+          eventRowMap.set(event.id, row);
+          
+          // Reserve this row for all days this event spans
+          eventDays.forEach(day => {
+            const dayKey = day.toDateString();
+            if (!layout[dayKey]) layout[dayKey] = [];
+            layout[dayKey].push({
+              event,
+              position: getEventPosition(event, day),
+              row
+            });
+          });
+        }
+      }
+    });
+
     return (
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="grid grid-cols-7 gap-0">
           {days.map((day, index) => {
             const isToday = day.toDateString() === new Date().toDateString();
-            const dayEvents = events.filter(event => isEventOnDate(event, day));
+            const dayKey = day.toDateString();
+            const dayLayout = layout[dayKey] || [];
+            const maxRow = dayLayout.length > 0 ? Math.max(...dayLayout.map(item => item.row)) : -1;
+            const totalEventsOnDay = events.filter(event => isEventOnDate(event, day)).length;
 
             return (
               <div
@@ -397,47 +439,65 @@ export const CalendarGrid = ({
                 </div>
                 
                 <div className="p-2 space-y-1">
-                  {dayEvents.map((event) => {
-                    const position = getEventPosition(event, day);
-                    const baseColor = getCategoryColor(event.category);
+                  {/* Render events in their assigned rows, limited to first 5 rows */}
+                  {Array.from({ length: Math.min(Math.max(maxRow + 1, 0), 5) }, (_, rowIndex) => {
+                    const eventInRow = dayLayout.find(item => item.row === rowIndex);
                     
-                    return (
-                      <Card
-                        key={`${event.id}-${day.toDateString()}`}
-                        className={`p-2 cursor-pointer hover:shadow-md transition-shadow min-h-[3rem] flex flex-col justify-center ${baseColor} ${
-                          position.isStart && position.isEnd ? "rounded-lg" : 
-                          position.isStart ? "rounded-l-lg rounded-r-none" : 
-                          position.isEnd ? "rounded-r-lg rounded-l-none" :
-                          position.isMiddle ? "rounded-none" : "rounded-lg"
-                        }`}
-                        style={{
-                          borderLeft: position.isStart || (!position.isMiddle && !position.isEnd) ? 
-                            '1px solid ' + getCategoryColor(event.category, true) : 'none',
-                          borderRight: position.isEnd || (!position.isMiddle && !position.isStart) ? 
-                            '1px solid ' + getCategoryColor(event.category, true) : 'none',
-                          borderTop: '1px solid ' + getCategoryColor(event.category, true),
-                          borderBottom: '1px solid ' + getCategoryColor(event.category, true)
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEventClick(event);
-                        }}
-                      >
-                        <div className="text-sm font-medium truncate">
-                          {position.isStart || (!position.isMiddle && !position.isEnd) ? event.title : "\u00A0"}
-                        </div>
-                        {(position.isStart || (!position.isMiddle && !position.isEnd)) && (
-                          <div className="text-xs text-gray-600">
-                            {new Date(event.startDate).toLocaleTimeString("en-US", { 
-                              hour: "numeric", 
-                              minute: "2-digit",
-                              hour12: true 
-                            })}
+                    if (eventInRow) {
+                      const { event, position } = eventInRow;
+                      const baseColor = getCategoryColor(event.category);
+                      
+                      return (
+                        <Card
+                          key={`${event.id}-${day.toDateString()}-${rowIndex}`}
+                          className={`p-2 cursor-pointer hover:shadow-md transition-shadow min-h-[4rem] flex flex-col justify-center ${baseColor} ${
+                            position.isStart && position.isEnd ? "rounded-lg" : 
+                            position.isStart ? "rounded-l-lg rounded-r-none" : 
+                            position.isEnd ? "rounded-r-lg rounded-l-none" :
+                            position.isMiddle ? "rounded-none" : "rounded-lg"
+                          }`}
+                          style={{
+                            borderLeft: position.isStart || (!position.isMiddle && !position.isEnd) ? 
+                              '1px solid ' + getCategoryColor(event.category, true) : 'none',
+                            borderRight: position.isEnd || (!position.isMiddle && !position.isStart) ? 
+                              '1px solid ' + getCategoryColor(event.category, true) : 'none',
+                            borderTop: '1px solid ' + getCategoryColor(event.category, true),
+                            borderBottom: '1px solid ' + getCategoryColor(event.category, true),
+                            marginLeft: position.isStart ? '0' : '-4px',
+                            marginRight: position.isEnd ? '0' : '-4px',
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEventClick(event);
+                          }}
+                        >
+                          <div className="text-sm font-medium truncate h-5 flex items-center">
+                            {position.isStart || (!position.isMiddle && !position.isEnd) ? event.title : "\u00A0"}
                           </div>
-                        )}
-                      </Card>
+                          <div className="text-xs text-gray-600 h-4 flex items-center">
+                            {(position.isStart || (!position.isMiddle && !position.isEnd)) ? (
+                              new Date(event.startDate).toLocaleTimeString("en-US", { 
+                                hour: "numeric", 
+                                minute: "2-digit",
+                                hour12: true 
+                              })
+                            ) : "\u00A0"}
+                          </div>
+                        </Card>
+                      );
+                    }
+                    
+                    // Empty row placeholder to maintain spacing and alignment
+                    return (
+                      <div key={`empty-${rowIndex}`} className="min-h-[4rem]"></div>
                     );
                   })}
+                  
+                  {totalEventsOnDay > 5 && (
+                    <div className="text-xs text-gray-500 h-5 flex items-center justify-center">
+                      +{totalEventsOnDay - 5} more
+                    </div>
+                  )}
                 </div>
               </div>
             );
