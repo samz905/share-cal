@@ -386,7 +386,7 @@ export const CalendarGrid = ({
       days.push(day);
     }
 
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     // Create layout that assigns consistent rows to events (same logic as month view)
     const layout: { [dayKey: string]: { event: Event; position: ReturnType<typeof getEventPosition>; row: number }[] } = {};
@@ -429,6 +429,16 @@ export const CalendarGrid = ({
 
     return (
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        {/* Day Headers - consistent with month view */}
+        <div className="grid grid-cols-7 bg-gray-50">
+          {dayNames.map((dayName, index) => (
+            <div key={dayName} className="p-3 text-center text-sm font-medium text-gray-600 border-r last:border-r-0">
+              {dayName}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar Days */}
         <div className="grid grid-cols-7 gap-0">
           {days.map((day, index) => {
             const isToday = day.toDateString() === new Date().toDateString();
@@ -440,21 +450,16 @@ export const CalendarGrid = ({
             return (
               <div
                 key={index}
-                className="min-h-[400px] border-r last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="min-h-[400px] p-2 border-r last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => onDateClick(day)}
               >
-                <div className={`p-3 border-b bg-gray-50 ${isToday ? "bg-blue-50" : ""}`}>
-                  <div className="text-xs font-medium text-gray-600 mb-1">
-                    {dayNames[index]}
-                  </div>
-                  <div className={`text-lg font-semibold ${
-                    isToday ? "bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center" : ""
-                  }`}>
-                    {day.getDate()}
-                  </div>
+                <div className={`text-sm font-medium mb-1 ${
+                  isToday ? "bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center" : ""
+                }`}>
+                  {day.getDate()}
                 </div>
                 
-                <div className="p-2 space-y-1">
+                <div className="space-y-1">
                   {/* Render events in their assigned rows, limited to first 5 rows */}
                   {Array.from({ length: Math.min(Math.max(maxRow + 1, 0), 5) }, (_, rowIndex) => {
                     const eventInRow = dayLayout.find(item => item.row === rowIndex);
