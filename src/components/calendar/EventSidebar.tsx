@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Event } from "@/types/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +37,7 @@ export const EventSidebar = ({ events, onEventClick, onCreateEvent }: EventSideb
   }
 
   return (
-    <div className="w-80 bg-white/80 backdrop-blur-sm border-l border-gray-200 p-4 overflow-y-auto">
+    <div className="w-80 bg-white/80 backdrop-blur-sm border-l border-gray-200 p-4 overflow-y-auto h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Upcoming Events</h3>
         <Button
@@ -59,7 +58,7 @@ export const EventSidebar = ({ events, onEventClick, onCreateEvent }: EventSideb
         New Event
       </Button>
 
-      <div className="space-y-3">
+      <div className="space-y-3 flex-1 overflow-y-auto">
         {upcomingEvents.length === 0 ? (
           <Card className="border-dashed border-2 border-gray-200">
             <CardContent className="p-6 text-center">

@@ -508,7 +508,7 @@ export const CalendarGrid = ({
   };
 
   return (
-    <div className="h-full">
+    <div className="mb-0.7">
       {view === "month" ? renderMonthView() : renderWeekView()}
     </div>
   );
