@@ -11,6 +11,19 @@ interface CalendarGridProps {
   onEventClick: (event: Event) => void;
 }
 
+// Helper function to get consistent event styles
+const getEventStyles = (category: string) => {
+  const colorMap = {
+    work: { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' },
+    personal: { bg: '#dcfce7', text: '#166534', border: '#10b981' },
+    meeting: { bg: '#f3e8ff', text: '#5b21b6', border: '#8b5cf6' },
+    appointment: { bg: '#fed7aa', text: '#9a3412', border: '#f59e0b' },
+    holiday: { bg: '#fee2e2', text: '#991b1b', border: '#ef4444' },
+    default: { bg: '#f3f4f6', text: '#374151', border: '#6b7280' }
+  };
+  return colorMap[category as keyof typeof colorMap] || colorMap.default;
+};
+
 export const CalendarGrid = ({
   currentDate,
   view,
@@ -302,6 +315,7 @@ export const CalendarGrid = ({
                     if (eventInRow) {
                       const { event, position } = eventInRow;
                       const baseColor = getCategoryColor(event.category);
+                      const eventStyles = getEventStyles(event.category);
                       
                       return (
                         <div
@@ -315,14 +329,16 @@ export const CalendarGrid = ({
                         >
                           <Badge
                             variant="secondary"
-                            className={`text-xs cursor-pointer block truncate h-5 flex items-center ${baseColor} ${
+                            className={`text-xs cursor-pointer block truncate h-5 flex items-center hover:opacity-80 transition-opacity border ${
                               position.isStart && position.isEnd ? "rounded-md" : 
                               position.isStart ? "rounded-l-md rounded-r-none" : 
                               position.isEnd ? "rounded-r-md rounded-l-none" :
                               position.isMiddle ? "rounded-none" : "rounded-md"
                             }`}
                             style={{
-                              borderColor: getCategoryColor(event.category, true),
+                              backgroundColor: eventStyles.bg,
+                              color: eventStyles.text,
+                              borderColor: eventStyles.border,
                               borderLeftStyle: position.isStart || (!position.isMiddle && !position.isEnd) ? 'solid' : 'none',
                               borderRightStyle: position.isEnd || (!position.isMiddle && !position.isStart) ? 'solid' : 'none',
                             }}
@@ -446,44 +462,53 @@ export const CalendarGrid = ({
                     if (eventInRow) {
                       const { event, position } = eventInRow;
                       const baseColor = getCategoryColor(event.category);
+                      const eventStyles = getEventStyles(event.category);
                       
                       return (
-                        <Card
+                        <div
                           key={`${event.id}-${day.toDateString()}-${rowIndex}`}
-                          className={`p-2 cursor-pointer hover:shadow-md transition-shadow min-h-[4rem] flex flex-col justify-center ${baseColor} ${
-                            position.isStart && position.isEnd ? "rounded-lg" : 
-                            position.isStart ? "rounded-l-lg rounded-r-none" : 
-                            position.isEnd ? "rounded-r-lg rounded-l-none" :
-                            position.isMiddle ? "rounded-none" : "rounded-lg"
-                          }`}
+                          className="relative"
                           style={{
-                            borderLeft: position.isStart || (!position.isMiddle && !position.isEnd) ? 
-                              '1px solid ' + getCategoryColor(event.category, true) : 'none',
-                            borderRight: position.isEnd || (!position.isMiddle && !position.isStart) ? 
-                              '1px solid ' + getCategoryColor(event.category, true) : 'none',
-                            borderTop: '1px solid ' + getCategoryColor(event.category, true),
-                            borderBottom: '1px solid ' + getCategoryColor(event.category, true),
-                            marginLeft: position.isStart ? '0' : '-4px',
-                            marginRight: position.isEnd ? '0' : '-4px',
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEventClick(event);
+                            marginLeft: position.isStart ? '0' : '-8px',
+                            marginRight: position.isEnd ? '0' : '-8px',
+                            zIndex: 10
                           }}
                         >
-                          <div className="text-sm font-medium truncate h-5 flex items-center">
-                            {position.isStart || (!position.isMiddle && !position.isEnd) ? event.title : "\u00A0"}
-                          </div>
-                          <div className="text-xs text-gray-600 h-4 flex items-center">
-                            {(position.isStart || (!position.isMiddle && !position.isEnd)) ? (
-                              new Date(event.startDate).toLocaleTimeString("en-US", { 
-                                hour: "numeric", 
-                                minute: "2-digit",
-                                hour12: true 
-                              })
-                            ) : "\u00A0"}
-                          </div>
-                        </Card>
+                          <Card
+                            className={`p-2 cursor-pointer hover:opacity-80 transition-opacity min-h-[4rem] flex flex-col justify-center ${
+                              position.isStart && position.isEnd ? "rounded-lg" : 
+                              position.isStart ? "rounded-l-lg rounded-r-none" : 
+                              position.isEnd ? "rounded-r-lg rounded-l-none" :
+                              position.isMiddle ? "rounded-none" : "rounded-lg"
+                            }`}
+                            style={{
+                              backgroundColor: eventStyles.bg,
+                              color: eventStyles.text,
+                              borderColor: eventStyles.border,
+                              borderLeftStyle: position.isStart || (!position.isMiddle && !position.isEnd) ? 'solid' : 'none',
+                              borderRightStyle: position.isEnd || (!position.isMiddle && !position.isStart) ? 'solid' : 'none',
+                              borderTopStyle: 'solid',
+                              borderBottomStyle: 'solid',
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEventClick(event);
+                            }}
+                          >
+                            <div className="text-sm font-medium truncate h-5 flex items-center">
+                              {position.isStart || (!position.isMiddle && !position.isEnd) ? event.title : "\u00A0"}
+                            </div>
+                            <div className="text-xs opacity-75 h-4 flex items-center">
+                              {(position.isStart || (!position.isMiddle && !position.isEnd)) ? (
+                                new Date(event.startDate).toLocaleTimeString("en-US", { 
+                                  hour: "numeric", 
+                                  minute: "2-digit",
+                                  hour12: true 
+                                })
+                              ) : "\u00A0"}
+                            </div>
+                          </Card>
+                        </div>
                       );
                     }
                     
