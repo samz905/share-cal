@@ -46,18 +46,28 @@ export const EventDialog = ({
   const [category, setCategory] = useState<EventCategory>("default");
   const [reminder, setReminder] = useState<ReminderTime>("none");
 
+  // Helper function to format date for input without timezone issues
+  const formatDateForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     if (event) {
       setTitle(event.title);
       setDescription(event.description || "");
-      setStartDate(new Date(event.startDate).toISOString().split("T")[0]);
+      const eventStartDate = new Date(event.startDate);
+      const eventEndDate = new Date(event.endDate);
+      setStartDate(formatDateForInput(eventStartDate));
       setStartTime(new Date(event.startDate).toTimeString().slice(0, 5));
-      setEndDate(new Date(event.endDate).toISOString().split("T")[0]);
+      setEndDate(formatDateForInput(eventEndDate));
       setEndTime(new Date(event.endDate).toTimeString().slice(0, 5));
       setCategory(event.category);
       setReminder(event.reminder || "none");
     } else if (initialDate) {
-      const date = initialDate.toISOString().split("T")[0];
+      const date = formatDateForInput(initialDate);
       setStartDate(date);
       setEndDate(date);
       setStartTime("09:00");
@@ -68,7 +78,7 @@ export const EventDialog = ({
       setReminder("none");
     } else {
       const now = new Date();
-      const date = now.toISOString().split("T")[0];
+      const date = formatDateForInput(now);
       setStartDate(date);
       setEndDate(date);
       setStartTime("09:00");

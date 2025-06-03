@@ -206,15 +206,32 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       return;
     }
     
+    // Create optimistic event with temporary ID
+    const optimisticEvent: Event = {
+      ...event,
+      id: `temp-${Date.now()}-${Math.random()}` // Temporary ID
+    };
+    
+    // Optimistic update - add event immediately to UI
+    set({ events: [...state.events, optimisticEvent] });
+    
     try {
       console.log("Adding event to calendar:", calendarId, event);
       const eventId = await addEventToDb(calendarId, event);
       
       if (eventId) {
-        // Don't add to local state here - let real-time subscription handle it
-        // This prevents duplicate events when the real-time update comes in
-        console.log("Event created successfully, real-time will update the UI");
+        // Remove optimistic event and let real-time subscription add the real one
+        const currentState = get();
+        const eventsWithoutOptimistic = currentState.events.filter(e => e.id !== optimisticEvent.id);
+        set({ events: eventsWithoutOptimistic });
+        
+        console.log("Event created successfully, real-time will update the UI with actual event");
       } else {
+        // Remove optimistic event on failure
+        const currentState = get();
+        const eventsWithoutOptimistic = currentState.events.filter(e => e.id !== optimisticEvent.id);
+        set({ events: eventsWithoutOptimistic });
+        
         console.error("Failed to create event - no eventId returned");
         toast({
           title: "Failed to add event",
@@ -223,6 +240,11 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
         });
       }
     } catch (error) {
+      // Remove optimistic event on error
+      const currentState = get();
+      const eventsWithoutOptimistic = currentState.events.filter(e => e.id !== optimisticEvent.id);
+      set({ events: eventsWithoutOptimistic });
+      
       console.error("Error adding event:", error);
       toast({
         title: "Failed to add event",
@@ -233,14 +255,39 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   },
 
   updateEvent: async (eventId: string, updates: Partial<Event>) => {
+    const state = get();
+    const existingEvent = state.events.find(e => e.id === eventId);
+    
+    if (!existingEvent) {
+      console.error("Event not found for update:", eventId);
+      return;
+    }
+    
+    // Optimistic update - update event immediately in UI
+    const optimisticEvent: Event = { ...existingEvent, ...updates };
+    const eventsWithOptimisticUpdate = state.events.map(event => 
+      event.id === eventId ? optimisticEvent : event
+    );
+    set({ events: eventsWithOptimisticUpdate });
+    
     try {
       const success = await updateEventInDb(eventId, updates);
       
       if (success) {
-        // Don't update local state here - let real-time subscription handle it
-        console.log("Event updated successfully, real-time will update the UI");
+        console.log("Event updated successfully, real-time will update the UI with actual event");
+      } else {
+        // Revert optimistic update on failure
+        set({ events: state.events });
+        toast({
+          title: "Failed to update event",
+          description: "The event could not be updated. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
+      // Revert optimistic update on error
+      set({ events: state.events });
+      
       console.error("Error updating event:", error);
       toast({
         title: "Failed to update event",
@@ -251,14 +298,36 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   },
 
   deleteEvent: async (eventId: string) => {
+    const state = get();
+    const eventToDelete = state.events.find(e => e.id === eventId);
+    
+    if (!eventToDelete) {
+      console.error("Event not found for deletion:", eventId);
+      return;
+    }
+    
+    // Optimistic update - remove event immediately from UI
+    const eventsWithoutDeleted = state.events.filter(event => event.id !== eventId);
+    set({ events: eventsWithoutDeleted });
+    
     try {
       const success = await deleteEventFromDb(eventId);
       
       if (success) {
-        // Don't update local state here - let real-time subscription handle it
-        console.log("Event deleted successfully, real-time will update the UI");
+        console.log("Event deleted successfully, real-time will confirm the deletion");
+      } else {
+        // Revert optimistic deletion on failure
+        set({ events: state.events });
+        toast({
+          title: "Failed to delete event",
+          description: "The event could not be deleted. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
+      // Revert optimistic deletion on error
+      set({ events: state.events });
+      
       console.error("Error deleting event:", error);
       toast({
         title: "Failed to delete event",
