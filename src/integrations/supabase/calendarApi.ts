@@ -1,5 +1,6 @@
 import { supabase } from "./client";
 import { Event } from "@/types/calendar";
+import { validateEventDateRange } from "@/utils/eventUtils";
 
 // Create a new calendar
 export const createCalendar = async (calendarId: string) => {
@@ -63,6 +64,13 @@ export const addEvent = async (calendarId: string, event: Event): Promise<string
   try {
     console.log("🗄️ Database addEvent called:", { calendarId, event });
     
+    // Validate event date range
+    const validation = validateEventDateRange(event.startDate, event.endDate);
+    if (!validation.isValid) {
+      console.error("❌ Event validation failed:", validation.errorMessage);
+      throw new Error(validation.errorMessage);
+    }
+    
     const eventData = {
       calendar_id: calendarId,
       title: event.title,
@@ -97,6 +105,15 @@ export const addEvent = async (calendarId: string, event: Event): Promise<string
 // Update an event
 export const updateEvent = async (eventId: string, updates: Partial<Event>): Promise<boolean> => {
   try {
+    // If both start and end dates are being updated, validate them
+    if (updates.startDate && updates.endDate) {
+      const validation = validateEventDateRange(updates.startDate, updates.endDate);
+      if (!validation.isValid) {
+        console.error("❌ Event update validation failed:", validation.errorMessage);
+        throw new Error(validation.errorMessage);
+      }
+    }
+    
     const updateData: Record<string, any> = {};
     
     if (updates.title !== undefined) updateData.title = updates.title;

@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar, Clock, Tag, Bell, Trash2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { validateEventDateRange } from "@/utils/eventUtils";
 
 interface EventDialogProps {
   isOpen: boolean;
@@ -95,6 +97,17 @@ export const EventDialog = ({
 
     const startDateTime = new Date(`${startDate}T${startTime}`);
     const endDateTime = new Date(`${endDate}T${endTime}`);
+
+    // Validate event date range
+    const validation = validateEventDateRange(startDateTime, endDateTime);
+    if (!validation.isValid) {
+      toast({
+        title: "Invalid Date Range",
+        description: validation.errorMessage,
+        variant: "destructive"
+      });
+      return;
+    }
 
     onSave({
       title: title.trim(),

@@ -8,6 +8,17 @@ A collaborative calendar web application built with React, TypeScript, Vite, sha
 - Shared calendar links
 - Responsive, modern UI
 - Supabase integration for backend data
+- ✅ **Date Validation**: Prevents creation of events with invalid date ranges
+
+### Date Validation Features
+
+The calendar includes comprehensive date validation to ensure data integrity:
+
+- **End Date Validation**: Prevents creating events where the end date/time is before or equal to the start date/time
+- **Invalid Date Detection**: Validates that all entered dates and times are valid
+- **User-Friendly Error Messages**: Shows clear toast notifications when validation fails
+- **API-Level Validation**: Backend validation ensures data integrity even if frontend validation is bypassed
+
 
 ## Getting Started
 

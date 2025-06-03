@@ -52,3 +52,29 @@ export const isEventOnDay = (event: Event, day: Date): boolean => {
   // Check if the day falls within the event's date range (inclusive)
   return dayStart >= eventStartDate && dayStart <= eventEndDate;
 };
+
+/**
+ * Validate event date range
+ * @param startDate The start date
+ * @param endDate The end date
+ * @returns An object with validation result and error message if invalid
+ */
+export const validateEventDateRange = (startDate: Date, endDate: Date): { isValid: boolean; errorMessage?: string } => {
+  // Check if dates are valid
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return {
+      isValid: false,
+      errorMessage: "Please enter valid start and end dates and times."
+    };
+  }
+
+  // Check if end date is after start date
+  if (endDate <= startDate) {
+    return {
+      isValid: false,
+      errorMessage: "The end date and time must be after the start date and time."
+    };
+  }
+
+  return { isValid: true };
+};
