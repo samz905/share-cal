@@ -61,31 +61,35 @@ export const fetchEvents = async (calendarId: string): Promise<Event[]> => {
 // Add an event
 export const addEvent = async (calendarId: string, event: Event): Promise<string | null> => {
   try {
-    console.log("Attempting to add event to Supabase:", { calendarId, event });
+    console.log("🗄️ Database addEvent called:", { calendarId, event });
+    
+    const eventData = {
+      calendar_id: calendarId,
+      title: event.title,
+      description: event.description,
+      start_date: event.startDate.toISOString(),
+      end_date: event.endDate.toISOString(),
+      category: event.category,
+      reminder: event.reminder
+    };
+    
+    console.log("📤 Inserting event data:", eventData);
     
     const { data, error } = await supabase
       .from("events")
-      .insert({
-        calendar_id: calendarId,
-        title: event.title,
-        description: event.description,
-        start_date: event.startDate.toISOString(),
-        end_date: event.endDate.toISOString(),
-        category: event.category,
-        reminder: event.reminder
-      })
+      .insert(eventData)
       .select("id")
       .single();
     
     if (error) {
-      console.error("Supabase error adding event:", error);
+      console.error("❌ Supabase error adding event:", error);
       throw error;
     }
     
-    console.log("Event added successfully, ID:", data.id);
+    console.log("✅ Event added successfully to database, ID:", data.id);
     return data.id;
   } catch (error) {
-    console.error("Error adding event:", error);
+    console.error("❌ Error in addEvent API:", error);
     return null;
   }
 };
