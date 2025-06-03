@@ -8,8 +8,10 @@ import {
   createCalendar as createCalendarInDb,
   checkCalendarExists
 } from '@/integrations/supabase/calendarApi';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { isEventOnDay } from '@/utils/eventUtils';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 interface CalendarStore extends CalendarState {
   loadCalendar: (calendarId: string) => Promise<boolean>;
@@ -19,18 +21,29 @@ interface CalendarStore extends CalendarState {
   deleteEvent: (eventId: string) => Promise<void>;
   getEventsForDate: (date: Date) => Event[];
   isLoading: boolean;
+  // Real-time methods
+  subscribeToEvents: (calendarId: string) => void;
+  unsubscribeFromEvents: () => void;
+  subscription: any;
 }
 
 export const useCalendarStore = create<CalendarStore>((set, get) => ({
   events: [],
   currentCalendarId: null,
   isLoading: false,
+  subscription: null,
 
   loadCalendar: async (calendarId: string) => {
     set({ isLoading: true });
     
     try {
       console.log("Loading calendar:", calendarId);
+      
+      // Unsubscribe from previous calendar if any
+      const state = get();
+      if (state.subscription) {
+        state.unsubscribeFromEvents();
+      }
       
       // Check if calendar exists
       const exists = await checkCalendarExists(calendarId);
@@ -55,6 +68,9 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
         isLoading: false 
       });
       
+      // Subscribe to real-time updates
+      get().subscribeToEvents(calendarId);
+      
       return true;
     } catch (error) {
       console.error("Error loading calendar:", error);
@@ -67,6 +83,104 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       });
       
       return false;
+    }
+  },
+
+  subscribeToEvents: (calendarId: string) => {
+    console.log("Setting up real-time subscription for calendar:", calendarId);
+    
+    const subscription = supabase
+      .channel(`calendar-${calendarId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events',
+          filter: `calendar_id=eq.${calendarId}`
+        },
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          console.log("Real-time event received:", payload);
+          
+          const state = get();
+          
+          switch (payload.eventType) {
+            case 'INSERT':
+              // New event added
+              if (payload.new) {
+                const newEvent: Event = {
+                  id: payload.new.id,
+                  title: payload.new.title,
+                  description: payload.new.description || "",
+                  startDate: new Date(payload.new.start_date),
+                  endDate: new Date(payload.new.end_date),
+                  category: payload.new.category as any,
+                  reminder: payload.new.reminder as any
+                };
+                
+                // Check if event already exists (to avoid duplicates from our own actions)
+                const existingEvent = state.events.find(e => e.id === newEvent.id);
+                if (!existingEvent) {
+                  set({ events: [...state.events, newEvent] });
+                  
+                  // Only show notification if this seems to be from another user
+                  // (We can enhance this later with user tracking)
+                  console.log("New event added via real-time:", newEvent.title);
+                }
+              }
+              break;
+              
+            case 'UPDATE':
+              // Event updated
+              if (payload.new) {
+                const updatedEvent: Event = {
+                  id: payload.new.id,
+                  title: payload.new.title,
+                  description: payload.new.description || "",
+                  startDate: new Date(payload.new.start_date),
+                  endDate: new Date(payload.new.end_date),
+                  category: payload.new.category as any,
+                  reminder: payload.new.reminder as any
+                };
+                
+                const newEvents = state.events.map(event => 
+                  event.id === updatedEvent.id ? updatedEvent : event
+                );
+                
+                set({ events: newEvents });
+                
+                console.log("Event updated via real-time:", updatedEvent.title);
+              }
+              break;
+              
+            case 'DELETE':
+              // Event deleted
+              if (payload.old) {
+                const deletedEventId = payload.old.id;
+                const deletedEvent = state.events.find(e => e.id === deletedEventId);
+                
+                const newEvents = state.events.filter(event => event.id !== deletedEventId);
+                set({ events: newEvents });
+                
+                if (deletedEvent) {
+                  console.log("Event deleted via real-time:", deletedEvent.title);
+                }
+              }
+              break;
+          }
+        }
+      )
+      .subscribe();
+    
+    set({ subscription });
+  },
+
+  unsubscribeFromEvents: () => {
+    const state = get();
+    if (state.subscription) {
+      console.log("Unsubscribing from real-time events");
+      supabase.removeChannel(state.subscription);
+      set({ subscription: null });
     }
   },
 
@@ -97,13 +211,9 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       const eventId = await addEventToDb(calendarId, event);
       
       if (eventId) {
-        const newEvent = { ...event, id: eventId };
-        set({ events: [...state.events, newEvent] });
-        
-        toast({
-          title: "Event created",
-          description: `"${event.title}" has been added to your calendar.`,
-        });
+        // Don't add to local state here - let real-time subscription handle it
+        // This prevents duplicate events when the real-time update comes in
+        console.log("Event created successfully, real-time will update the UI");
       } else {
         console.error("Failed to create event - no eventId returned");
         toast({
@@ -123,17 +233,12 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   },
 
   updateEvent: async (eventId: string, updates: Partial<Event>) => {
-    const state = get();
-    
     try {
       const success = await updateEventInDb(eventId, updates);
       
       if (success) {
-        const newEvents = state.events.map(event => 
-          event.id === eventId ? { ...event, ...updates } : event
-        );
-        
-        set({ events: newEvents });
+        // Don't update local state here - let real-time subscription handle it
+        console.log("Event updated successfully, real-time will update the UI");
       }
     } catch (error) {
       console.error("Error updating event:", error);
@@ -146,14 +251,12 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   },
 
   deleteEvent: async (eventId: string) => {
-    const state = get();
-    
     try {
       const success = await deleteEventFromDb(eventId);
       
       if (success) {
-        const newEvents = state.events.filter(event => event.id !== eventId);
-        set({ events: newEvents });
+        // Don't update local state here - let real-time subscription handle it
+        console.log("Event deleted successfully, real-time will update the UI");
       }
     } catch (error) {
       console.error("Error deleting event:", error);

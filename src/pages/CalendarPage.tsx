@@ -24,6 +24,7 @@ const CalendarPage = () => {
     addEvent,
     updateEvent,
     deleteEvent,
+    unsubscribeFromEvents,
     isLoading
   } = useCalendarStore();
 
@@ -43,7 +44,12 @@ const CalendarPage = () => {
     };
     
     initCalendar();
-  }, [calendarId, loadCalendar, navigate]);
+
+    // Cleanup real-time subscription when component unmounts
+    return () => {
+      unsubscribeFromEvents();
+    };
+  }, [calendarId, loadCalendar, navigate, unsubscribeFromEvents]);
 
   const handleCreateEvent = (date?: Date) => {
     setSelectedEvent(null);
