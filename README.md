@@ -1,4 +1,4 @@
-# Link-n-Plan Calendar
+# ShareCal
 
 A collaborative calendar web application built with React, TypeScript, Vite, shadcn-ui, Tailwind CSS, and Supabase.
 

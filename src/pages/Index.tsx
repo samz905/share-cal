@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,9 @@ const Index = () => {
   const navigate = useNavigate();
   
   const generateCalendarId = () => {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Use crypto.randomUUID() for cryptographically secure random IDs
+    // Remove hyphens and take first 24 characters for consistency with old format
+    return crypto.randomUUID().replace(/-/g, '').substring(0, 24);
   };
 
   const createNewCalendar = () => {
@@ -26,7 +27,7 @@ const Index = () => {
             <Calendar className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            Shared Calendar
+            ShareCal
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
             Create instant collaborative calendars. Share a link, start collaborating. 

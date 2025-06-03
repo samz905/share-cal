@@ -79,7 +79,7 @@ export const CalendarHeader = ({
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Calendar className="w-6 h-6 text-indigo-600" />
-            <h1 className="text-xl font-semibold text-gray-900">Shared Calendar</h1>
+            <h1 className="text-xl font-semibold text-gray-900">ShareCal</h1>
           </div>
           
           <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
