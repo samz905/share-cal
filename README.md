@@ -4,21 +4,9 @@ A collaborative calendar web application built with React, TypeScript, Vite, sha
 
 ## Features
 - Month and week calendar views
-- Event creation and management
+- Event creation and management with date validation
 - Shared calendar links
-- Responsive, modern UI
 - Supabase integration for backend data
-- ✅ **Date Validation**: Prevents creation of events with invalid date ranges
-
-### Date Validation Features
-
-The calendar includes comprehensive date validation to ensure data integrity:
-
-- **End Date Validation**: Prevents creating events where the end date/time is before or equal to the start date/time
-- **Invalid Date Detection**: Validates that all entered dates and times are valid
-- **User-Friendly Error Messages**: Shows clear toast notifications when validation fails
-- **API-Level Validation**: Backend validation ensures data integrity even if frontend validation is bypassed
-
 
 ## Getting Started
 
@@ -30,8 +18,8 @@ The calendar includes comprehensive date validation to ensure data integrity:
 Clone the repository and install dependencies:
 
 ```sh
-git clone https://github.com/samz905/link-n-plan-calendar
-cd link-n-plan-calendar
+git clone https://github.com/samz905/share-cal
+cd share-cal
 npm install # or bun install
 ```
 
